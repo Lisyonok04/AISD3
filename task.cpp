@@ -3,6 +3,7 @@
 #include<iostream>
 #include<list>
 #include<vector>
+#include<unordered_set>
 #include<exception>
 #include <queue>
 #include <limits>
@@ -14,17 +15,6 @@ const int INF = std::numeric_limits<int>::max();
 using namespace std;
 
 
-//template <typename Vertex, typename Distance = double>
-//struct Vertexes {
-//	struct Edge {
-//		int _vert;
-//		Distance _distance;
-//	};
-//	int _index;
-//	Vertex _value;
-//	list<Edge> _edges;
-//	Vertexes(int index, Vertex value) : _index(index), _value(value) {};
-//};
 template <typename V, typename Distance = double>
 class Graph {
 private:
@@ -36,7 +26,6 @@ private:
 		int _index;
 		V _value;
 		list<Edge> _edges;
-		//Vertex(int index, Vertex value) : _index(index), _value(value) {};
 	};
 	vector<Vertex> _graph;
 
@@ -59,6 +48,16 @@ private:
 			}
 			count++;
 		}
+	}
+
+	void dfs_h(int from, vector<int>& visited)const {
+		visited[from] = 1;
+		for (auto& i : _graph[from]._edges) {
+			if (!visited[i._vert]) {
+				dfs_h(i._vert, visited);
+			}
+		}
+		cout << _graph[from]._value << " ";
 	}
 public:
 	Graph() = default;
@@ -163,7 +162,93 @@ public:
 	std::vector<Edge> shortest_path(const Vertex& from, const Vertex& to) const {
 
 	};
-	std::vector<Vertex> walk(const Vertex& start_vertex)const {
+	void bfs(V start_val) {
+		auto start = (*this)[start_val]._index;
+		queue<int> q;
+		unordered_set<int> visited;
 
-	};
+		q.push(start);
+		visited.insert(start);
+
+		while (!q.empty()) {
+			int vertex = q.front();
+			q.pop();
+
+			cout << "Visiting vertex " << _graph[vertex]._value << endl;
+
+			for (auto& neighbor : _graph[vertex]._edges) {
+				if (visited.find(neighbor._vert) == visited.end()) {
+					q.push(neighbor._vert);
+					visited.insert(neighbor._vert);
+				}
+			}
+		}
+	}
+	void dfs(V start_vertex) {
+		if (has_vertex(start_vertex)) {
+			vector<int> visited(size() + 1, 0);
+			dfs_h((*this)[start_vertex]._index , visited);
+		}
+	}
+	vector<double> Dijkstra(V _from, bool flag) {
+		auto from = (*this)[_from]._index;
+		vector<double> distance(size(), INF);
+		distance[from] = 0;
+		vector<vector<V>> paths(size());
+		priority_queue<std::pair<int, int>, vector<std::pair<int, int>>, greater<>> queue;
+		queue.push({ 0, from });
+
+		while (!queue.empty()) {
+			int u = queue.top().second;
+			queue.pop();
+
+			for (auto& edge : _graph[u]._edges) {
+				int v = edge._vert;
+				int weight = edge._distance;
+
+				if (distance[v] > distance[u] + weight) {
+					paths[v] = paths[u];
+					paths[v].push_back(_graph[v]._value);
+					distance[v] = distance[u] + weight;
+					queue.push({ distance[v], v });
+				}
+			}
+		}
+		for (auto& elem : paths) {
+			vector<V> new_vec;
+			new_vec.push_back(_from);
+			for (auto& i : elem)
+				new_vec.push_back(i);
+			elem = new_vec;
+		}
+		if (flag) {
+			for (int i = 0; i < size(); i++) {
+				std::cout << "From " << _from << " to " << _graph[i]._value << " is " << distance[i] << "path-> ";
+				for (auto& elem : paths[i]) {
+					cout << elem << " ";
+				}
+				cout << endl;
+			}
+			/*for (auto& vert : paths) {
+				for (auto& elem : vert) {
+					cout << elem << " ";
+				}
+				cout << endl;
+			}*/
+		}
+		return distance;
+	}
+	V find_graph_center() {
+		int center = -1;
+		int max_dist = -1;
+		for (auto& vertex : _graph) {
+			vector<double> dist = Dijkstra(vertex._value, false);
+			int max_d = *max_element(dist.begin(), dist.end());
+			if (max_d < max_dist || max_dist == -1) {
+				max_dist = max_d;
+				center = vertex._index;
+			}
+		}
+		return _graph[center]._value;
+	}
 };
